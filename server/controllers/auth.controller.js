@@ -136,10 +136,10 @@ export const googleCallback = asyncHandler(async (req, res) => {
   setAuthCookie(res, { user_id: publicUser.user_id, email: publicUser.email });
 
   // Generate short-lived one-time code (valid 60 seconds)
-  const otc = createOtcCode(
-    { user_id: publicUser.user_id, email: publicUser.email },
-    publicUser
-  );
+  const otc = createOtcCode({
+    user_id: publicUser.user_id,
+    email: publicUser.email,
+  });
 
   const frontend = getFrontendBase();
   return res.redirect(302, `${frontend.replace(/\/$/, "")}/auth/callback?code=${encodeURIComponent(otc)}`);
@@ -147,8 +147,9 @@ export const googleCallback = asyncHandler(async (req, res) => {
 
 export const exchangeOtc = asyncHandler(async (req, res) => {
   const { code } = req.body;
-  const entry = consumeOtcCode(code);
+  const payload = consumeOtcCode(code);
 
-  setAuthCookie(res, entry.payload);
-  return res.json(entry.user);
+  setAuthCookie(res, payload);
+  const user = await getPublicUser(payload.user_id);
+  return res.json(user);
 });

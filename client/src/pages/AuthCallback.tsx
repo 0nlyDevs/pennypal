@@ -17,7 +17,7 @@ export default function AuthCallback() {
     (async () => {
       try {
         if (code) {
-          const apiBase = (import.meta.env.VITE_API_BASE || "http://localhost:8080/api").replace(/\/$/, "");
+          const apiBase = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
           await fetch(`${apiBase}/auth/otc`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

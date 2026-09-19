@@ -1,52 +1,45 @@
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { BadRequestError } from "../utils/errors.js";
 
-// In-memory store for short-lived one-time exchange codes (OTC)
-const otcStore = new Map();
-
-// Periodically clean expired OTC entries
-setInterval(() => {
-  const now = Date.now();
-  for (const [code, entry] of otcStore.entries()) {
-    if (now > entry.expiresAt) {
-      otcStore.delete(code);
-    }
-  }
-}, 60000).unref();
-
 /**
- * Creates a short-lived one-time exchange code.
+ * Creates a stateless, short-lived (60s) signed OTC token.
  * @param {object} payload Session payload (user_id, email, etc.)
- * @param {object} user Public user object
- * @param {number} ttlMs Time-to-live in milliseconds (default: 60s)
- * @returns {string} The generated code
+ * @returns {string} Signed JWT token valid for 60 seconds
  */
-export const createOtcCode = (payload, user, ttlMs = 60000) => {
-  const code = crypto.randomBytes(24).toString("hex");
-  otcStore.set(code, {
-    payload,
-    user,
-    expiresAt: Date.now() + ttlMs,
+export const createOtcCode = (payload) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("Missing JWT_SECRET");
+  }
+  return jwt.sign({ ...payload, otc: true }, process.env.JWT_SECRET, {
+    expiresIn: "60s",
   });
-  return code;
 };
 
 /**
- * Consumes and invalidates a short-lived one-time exchange code.
+ * Verifies and consumes a stateless short-lived OTC token.
  * @param {string} code
- * @returns {{ payload: object, user: object }} The stored entry data
+ * @returns {object} The decoded payload
  */
 export const consumeOtcCode = (code) => {
   if (!code || typeof code !== "string") {
     throw new BadRequestError("One-time code required");
   }
 
-  const entry = otcStore.get(code);
-  otcStore.delete(code); // single-use
-
-  if (!entry || Date.now() > entry.expiresAt) {
-    throw new BadRequestError("Invalid or expired one-time code");
+  if (!process.env.JWT_SECRET) {
+    throw new Error("Missing JWT_SECRET");
   }
 
-  return entry;
+  try {
+    const payload = jwt.verify(code, process.env.JWT_SECRET);
+    if (!payload?.otc || !payload?.user_id) {
+      throw new BadRequestError("Invalid one-time code");
+    }
+    return {
+      user_id: payload.user_id,
+      email: payload.email,
+    };
+  } catch (err) {
+    if (err instanceof BadRequestError) throw err;
+    throw new BadRequestError("Invalid or expired one-time code");
+  }
 };
