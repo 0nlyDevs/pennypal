@@ -15,13 +15,17 @@ import {
 
 const TOKEN_COOKIE_NAME = "token";
 
-const setAuthCookie = (res, payload) => {
+const generateToken = (payload) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("Missing JWT_SECRET");
   }
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+  return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
+};
+
+const setAuthCookie = (res, payload) => {
+  const token = generateToken(payload);
   const isProd = process.env.NODE_ENV === "production";
   res.cookie(TOKEN_COOKIE_NAME, token, {
     httpOnly: true,
@@ -30,6 +34,7 @@ const setAuthCookie = (res, payload) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: "/",
   });
+  return token;
 };
 
 export const signup = asyncHandler(async (req, res) => {
@@ -127,8 +132,8 @@ export const googleCallback = asyncHandler(async (req, res) => {
     name: profile?.name,
   });
 
-  setAuthCookie(res, { user_id: publicUser.user_id, email: publicUser.email });
+  const token = setAuthCookie(res, { user_id: publicUser.user_id, email: publicUser.email });
 
   const frontend = getFrontendBase();
-  return res.redirect(302, `${frontend.replace(/\/$/, "")}/auth/callback`);
+  return res.redirect(302, `${frontend.replace(/\/$/, "")}/auth/callback?token=${encodeURIComponent(token)}`);
 });

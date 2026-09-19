@@ -10,7 +10,12 @@ export default function AuthCallback() {
   const { refresh } = useAuth();
 
   useEffect(() => {
-    // the backend should have set the session cookie. Just refresh the session and redirect.
+    const searchParams = new URLSearchParams(window.location.search);
+    const token = searchParams.get("token");
+    if (token) {
+      localStorage.setItem("auth_token", token);
+    }
+
     const from = (location.state && typeof location.state === 'object' && location.state?.from) || "/dashboard";
     (async () => {
       try {
