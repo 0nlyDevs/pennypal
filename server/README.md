@@ -66,6 +66,9 @@ Then edit `.env` with your actual configuration values.
 3) Start the server
 
 ```bash
+# Full pre-start setup (database + generated API client)
+npm run build
+
 # Development (auto-reload)
 npm run dev
 
@@ -144,6 +147,9 @@ Mounted in `server/server.js`:
 - Prisma commands:
 
 ```bash
+# full pre-start build setup
+npm run build
+
 # generate client
 npm run prisma:generate
 
@@ -160,7 +166,7 @@ npm run prisma:seed
 npm run prisma:studio
 ```
 
-Migrations run automatically on `npm start` via `prisma migrate deploy`.
+`npm run build` runs Prisma generate, applies deploy migrations, and regenerates the client SDK from the OpenAPI spec.
 
 <h2>Notes</h2>
 
