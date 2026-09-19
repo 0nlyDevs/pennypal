@@ -7,8 +7,3 @@ OpenAPI.BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8080/api';
 // Credentials: enable cookies for auth-backed endpoints
 OpenAPI.WITH_CREDENTIALS = true;
 OpenAPI.CREDENTIALS = 'include';
-
-// Dynamically supply token from localStorage if available
-OpenAPI.TOKEN = async () => {
-  return localStorage.getItem('auth_token') || '';
-};

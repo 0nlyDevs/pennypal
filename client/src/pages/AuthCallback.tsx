@@ -11,14 +11,20 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    const token = searchParams.get("token");
-    if (token) {
-      localStorage.setItem("auth_token", token);
-    }
-
+    const code = searchParams.get("code");
     const from = (location.state && typeof location.state === 'object' && location.state?.from) || "/dashboard";
+
     (async () => {
       try {
+        if (code) {
+          const apiBase = (import.meta.env.VITE_API_BASE || "http://localhost:8080/api").replace(/\/$/, "");
+          await fetch(`${apiBase}/auth/otc`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code }),
+            credentials: "include",
+          });
+        }
         await refresh();
       } finally {
         navigate(from, { replace: true });

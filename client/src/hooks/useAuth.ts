@@ -139,13 +139,12 @@ export const useAuth = () => {
     setError(null);
     try {
       await DefaultService.postAuthLogout();
+      setUser(null);
     } catch (err) {
       const msg = toFriendlyAuthMessage(err, 'logout');
       setError(msg);
       throw err;
     } finally {
-      localStorage.removeItem('auth_token');
-      setUser(null);
       setLoading(false);
     }
   }, []);

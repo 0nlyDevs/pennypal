@@ -4,8 +4,11 @@ export function requireAuth(req, res, next) {
   try {
     let token = req.cookies?.token;
     const authHeader = req.headers.authorization;
-    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
+    if (!token && authHeader) {
+      const match = authHeader.match(/^bearer\s+(.+)$/i);
+      if (match) {
+        token = match[1].trim();
+      }
     }
 
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
