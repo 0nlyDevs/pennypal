@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import {
   signupUser,
@@ -6,6 +5,7 @@ import {
   getPublicUser,
   upsertOAuthUser,
 } from "../services/auth.service.js";
+import { createOtcCode, consumeOtcCode } from "../services/otc.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { BadRequestError } from "../utils/errors.js";
 import isStrongPassword from "validator/lib/isStrongPassword.js";
@@ -136,42 +136,18 @@ export const googleCallback = asyncHandler(async (req, res) => {
   setAuthCookie(res, { user_id: publicUser.user_id, email: publicUser.email });
 
   // Generate short-lived one-time code (valid 60 seconds)
-  const otc = crypto.randomBytes(24).toString("hex");
-  otcStore.set(otc, {
-    payload: { user_id: publicUser.user_id, email: publicUser.email },
-    user: publicUser,
-    expiresAt: Date.now() + 60000,
-  });
+  const otc = createOtcCode(
+    { user_id: publicUser.user_id, email: publicUser.email },
+    publicUser
+  );
 
   const frontend = getFrontendBase();
   return res.redirect(302, `${frontend.replace(/\/$/, "")}/auth/callback?code=${encodeURIComponent(otc)}`);
 });
 
-// In-memory store for short-lived one-time exchange codes (OTC)
-const otcStore = new Map();
-
-// Periodically clean expired OTC entries
-setInterval(() => {
-  const now = Date.now();
-  for (const [code, entry] of otcStore.entries()) {
-    if (now > entry.expiresAt) {
-      otcStore.delete(code);
-    }
-  }
-}, 60000).unref();
-
 export const exchangeOtc = asyncHandler(async (req, res) => {
   const { code } = req.body;
-  if (!code || typeof code !== "string") {
-    throw new BadRequestError("One-time code required");
-  }
-
-  const entry = otcStore.get(code);
-  otcStore.delete(code); // single-use
-
-  if (!entry || Date.now() > entry.expiresAt) {
-    throw new BadRequestError("Invalid or expired one-time code");
-  }
+  const entry = consumeOtcCode(code);
 
   setAuthCookie(res, entry.payload);
   return res.json(entry.user);
