@@ -1,5 +1,11 @@
 -- CreateEnum
-CREATE TYPE "public"."ExpenseType" AS ENUM ('ONE_TIME', 'RECURRING');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ExpenseType') THEN
+        CREATE TYPE "public"."ExpenseType" AS ENUM ('ONE_TIME', 'RECURRING');
+    END IF;
+END
+$$;
 
 -- CreateTable
 CREATE TABLE "public"."user" (
