@@ -125,19 +125,19 @@ npm run api:generate
 
 ## Deployment
 
-- Client is deployed on Cloudflare Pages. A Pages Function at
-  `client/functions/api/[[path]].js` proxies `/api/*` to the backend, so the
+- The client is deployed on a serverless edge platform. An edge proxy at
+  `client/functions/api/[[path]].js` forwards `/api/*` to the backend, so the
   browser only ever talks to the first-party origin and auth cookies stay
   first-party.
-- Set the Pages runtime variable `API_BASE` (e.g.
-  `https://pennypal-ya7b.onrender.com`) in the Cloudflare dashboard. Do **not**
-  set `VITE_API_BASE` in production; the build defaults to the relative `/api`.
-- Set `GOOGLE_REDIRECT_URI` to the Cloudflare origin callback, e.g.
-  `https://<your-pages-domain>/api/auth/google/callback`, and register it in
-  the Google Cloud console.
+- Set the platform runtime variable `API_BASE` to the deployed backend origin in
+  the platform dashboard. Do **not** set `VITE_API_BASE` in production; the
+  build defaults to the relative `/api`.
+- Set `GOOGLE_REDIRECT_URI` to your deployed origin callback, e.g.
+  `https://<your-domain>/api/auth/google/callback`, and register it in the
+  Google Cloud console.
 - Server: provide `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, and (if used)
   Supabase/Google OAuth variables as per `server/.env.example`. Auth tokens are
-  issued as httpOnly cookies (`token`, `refresh`), so the API and the Pages
+  issued as httpOnly cookies (`token`, `refresh`), so the API and the client
   origin must be served over HTTPS.
 
 <!-- Project-specific contribution guidelines and CI/CD details live outside this file. -->
