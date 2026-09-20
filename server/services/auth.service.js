@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import { prisma } from '../db/prisma.js';
+import { revokeAllSessionTokens } from './session.service.js';
 import { ConflictError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
 
 const publicUserSelect = {
@@ -9,6 +10,7 @@ const publicUserSelect = {
   firstname: true,
   lastname: true,
   created_at: true,
+  token_version: true,
 };
 
 export const signupUser = async ({ email, password, username, firstname, lastname }) => {
@@ -29,7 +31,7 @@ export const signupUser = async ({ email, password, username, firstname, lastnam
   return user;
 };
 
-export const loginUser = async ({ email, password }) => {
+export const loginUser = async ({ email, password, ip, userAgent }) => {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new UnauthorizedError('Invalid credentials');
 
@@ -43,8 +45,9 @@ export const loginUser = async ({ email, password }) => {
     firstname: user.firstname,
     lastname: user.lastname,
     created_at: user.created_at,
+    token_version: user.token_version,
   };
-  return publicUser;
+  return { user: publicUser, mfaRequired: false };
 };
 
 export const getPublicUser = async (userId) => {
@@ -119,6 +122,7 @@ export const changeUserPassword = async (userId, { currentPassword, newPassword 
     where: { user_id: userId },
     data: { hashed_password },
   });
+  await revokeAllSessionTokens(userId);
 
   return { message: 'Password updated successfully' };
 };

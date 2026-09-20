@@ -5,7 +5,13 @@ import {
   getPublicUser,
   upsertOAuthUser,
 } from "../services/auth.service.js";
-import { createOtcCode, consumeOtcCode } from "../services/otc.service.js";
+import {
+  issueRefreshToken,
+  rotateRefreshToken,
+  revokeRefreshToken,
+  revokeAllSessionTokens,
+  listSessions,
+} from "../services/session.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { BadRequestError } from "../utils/errors.js";
 import isStrongPassword from "validator/lib/isStrongPassword.js";
@@ -14,28 +20,61 @@ import {
   exchangeGoogleCodeForProfile,
 } from "../services/oauth.service.js";
 
-const TOKEN_COOKIE_NAME = "token";
+const ACCESS_COOKIE_NAME = "token";
+const REFRESH_COOKIE_NAME = "refresh";
 
-const generateToken = (payload) => {
-  if (!process.env.JWT_SECRET) {
-    throw new Error("Missing JWT_SECRET");
-  }
+const isProd = () => process.env.NODE_ENV === "production";
+
+const accessCookieOptions = () => ({
+  httpOnly: true,
+  secure: isProd(),
+  sameSite: "lax",
+  path: "/",
+  maxAge: 15 * 60 * 1000,
+});
+
+const refreshCookieOptions = () => ({
+  httpOnly: true,
+  secure: isProd(),
+  sameSite: "lax",
+  path: "/api",
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+});
+
+const mfaCookieOptions = () => ({
+  httpOnly: true,
+  secure: isProd(),
+  sameSite: "lax",
+  path: "/",
+  maxAge: 10 * 60 * 1000,
+});
+
+const signAccessToken = (payload) => {
+  if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    expiresIn: process.env.ACCESS_TOKEN_TTL || "15m",
   });
 };
 
-const setAuthCookie = (res, payload) => {
-  const token = generateToken(payload);
-  const isProd = process.env.NODE_ENV === "production";
-  res.cookie(TOKEN_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: "/",
+const setAuthCookies = async (req, res, user) => {
+  const accessToken = signAccessToken({
+    user_id: user.user_id,
+    email: user.email,
+    tv: user.token_version,
   });
-  return token;
+  const { token: refreshToken } = await issueRefreshToken({
+    user_id: user.user_id,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
+  res.cookie(ACCESS_COOKIE_NAME, accessToken, accessCookieOptions());
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions());
+};
+
+const clearAuthCookies = (res) => {
+  res.clearCookie(ACCESS_COOKIE_NAME, accessCookieOptions());
+  res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
+  res.clearCookie("mfa_challenge", mfaCookieOptions());
 };
 
 export const signup = asyncHandler(async (req, res) => {
@@ -62,7 +101,7 @@ export const signup = asyncHandler(async (req, res) => {
     firstname,
     lastname,
   });
-  setAuthCookie(res, { user_id: user.user_id, email: user.email });
+  await setAuthCookies(req, res, user);
   return res.status(201).json(user);
 });
 
@@ -70,9 +109,36 @@ export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     throw new BadRequestError("Email and password are required");
-  const publicUser = await loginUser({ email: req.body.email, password });
-  setAuthCookie(res, { user_id: publicUser.user_id, email: publicUser.email });
-  return res.json(publicUser);
+  const result = await loginUser({
+    email: req.body.email,
+    password,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
+  if (result.mfaRequired) {
+    res.cookie("mfa_challenge", result.challenge.challenge_id, mfaCookieOptions());
+    return res.status(200).json({ mfaRequired: true, email: req.body.email });
+  }
+  await setAuthCookies(req, res, result.user);
+  return res.json(result.user);
+});
+
+export const refresh = asyncHandler(async (req, res) => {
+  const current = req.cookies?.[REFRESH_COOKIE_NAME];
+  const session = await rotateRefreshToken({
+    token: current,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
+  const user = await getPublicUser(session.user_id);
+  res.cookie(
+    ACCESS_COOKIE_NAME,
+    signAccessToken({ user_id: user.user_id, email: user.email, tv: user.token_version }),
+    accessCookieOptions()
+  );
+  res.cookie(REFRESH_COOKIE_NAME, session.token, refreshCookieOptions());
+  res.clearCookie("mfa_challenge", mfaCookieOptions());
+  return res.json(user);
 });
 
 export const me = asyncHandler(async (req, res) => {
@@ -80,14 +146,22 @@ export const me = asyncHandler(async (req, res) => {
   return res.json(user);
 });
 
-export const logout = asyncHandler(async (_req, res) => {
-  res.clearCookie("token", {
-    path: "/",
-    sameSite: "none",
-    httpOnly: true,
-    secure: true,
-  });
+export const logout = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
+  await revokeRefreshToken(refreshToken);
+  clearAuthCookies(res);
   return res.status(204).send();
+});
+
+export const logoutAll = asyncHandler(async (req, res) => {
+  await revokeAllSessionTokens(req.user.user_id);
+  clearAuthCookies(res);
+  return res.status(204).send();
+});
+
+export const sessions = asyncHandler(async (req, res) => {
+  const userSessions = await listSessions(req.user.user_id);
+  return res.json({ sessions: userSessions });
 });
 
 const getFrontendBase = () =>
@@ -96,12 +170,16 @@ const getFrontendBase = () =>
   "http://localhost:5173";
 
 const getRedirectUri = (req) =>
-  process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get("host")}/api/auth/google/callback`;
+  process.env.GOOGLE_REDIRECT_URI ||
+  `${req.protocol}://${req.get("host")}/api/auth/google/callback`;
 
-const oauthCookieOpts = () => {
-  const isProd = process.env.NODE_ENV === 'production';
-  return { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax', path: '/', maxAge: 10 * 60 * 1000 };
-}
+const oauthCookieOpts = () => ({
+  httpOnly: true,
+  secure: isProd(),
+  sameSite: "lax",
+  path: "/",
+  maxAge: 10 * 60 * 1000,
+});
 
 export const googleAuth = asyncHandler(async (req, res) => {
   const redirectUri = getRedirectUri(req);
@@ -118,38 +196,26 @@ export const googleCallback = asyncHandler(async (req, res) => {
     throw new BadRequestError("Invalid OAuth state");
   }
 
-  res.clearCookie("g_state", { ...oauthCookieOpts(), maxAge: undefined });
+  res.clearCookie("g_state", oauthCookieOpts());
 
   const redirectUri = getRedirectUri(req);
-  const profile = await exchangeGoogleCodeForProfile({ code: String(code), redirectUri });
+  const profile = await exchangeGoogleCodeForProfile({
+    code: String(code),
+    redirectUri,
+  });
 
   const email = profile?.email;
   if (!email) throw new BadRequestError("Email not available from Google");
 
-  const publicUser = await upsertOAuthUser({
+  const user = await upsertOAuthUser({
     email,
     given_name: profile?.given_name,
     family_name: profile?.family_name,
     name: profile?.name,
   });
 
-  setAuthCookie(res, { user_id: publicUser.user_id, email: publicUser.email });
-
-  // Generate short-lived one-time code (valid 60 seconds)
-  const otc = createOtcCode({
-    user_id: publicUser.user_id,
-    email: publicUser.email,
-  });
+  await setAuthCookies(req, res, user);
 
   const frontend = getFrontendBase();
-  return res.redirect(302, `${frontend.replace(/\/$/, "")}/auth/callback?code=${encodeURIComponent(otc)}`);
-});
-
-export const exchangeOtc = asyncHandler(async (req, res) => {
-  const { code } = req.body;
-  const payload = consumeOtcCode(code);
-
-  setAuthCookie(res, payload);
-  const user = await getPublicUser(payload.user_id);
-  return res.json(user);
+  return res.redirect(302, `${frontend.replace(/\/$/, "")}/auth/callback`);
 });

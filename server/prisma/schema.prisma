@@ -15,20 +15,70 @@ datasource db {
 }
 
 model User {
-  user_id         Int      @id @default(autoincrement())
-  username        String?  @db.VarChar(50)
-  email           String   @unique @db.VarChar(255)
-  hashed_password String   @db.VarChar(255)
-  firstname       String?  @db.VarChar(100)
-  lastname        String?  @db.VarChar(100)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  user_id         Int       @id @default(autoincrement())
+  username        String?   @db.VarChar(50)
+  email           String    @unique @db.VarChar(255)
+  hashed_password String    @db.VarChar(255)
+  firstname       String?   @db.VarChar(100)
+  lastname        String?   @db.VarChar(100)
+  email_verified_at DateTime?
+  totp_enabled    Boolean   @default(false)
+  totp_secret     String?   @db.VarChar(255)
+  backup_codes    Json?
+  token_version   Int       @default(0)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
 
-  expenses   Expense[]
-  incomes    Income[]
-  categories ExpenseCategory[]
+  expenses       Expense[]
+  incomes        Income[]
+  categories     ExpenseCategory[]
+  refreshTokens  RefreshToken[]
+  loginAttempts  LoginAttempt[]
+  mfaChallenges  MfaChallenge[]
 
   @@map("user")
+}
+
+model RefreshToken {
+  token_hash            String    @id @db.VarChar(64)
+  family_id             String    @db.VarChar(36)
+  user_id               Int
+  user                  User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  ip                    String?   @db.VarChar(64)
+  user_agent            String?   @db.VarChar(255)
+  created_at            DateTime  @default(now())
+  expires_at            DateTime
+  revoked_at            DateTime?
+  replaced_by_token_hash String?  @db.VarChar(64)
+
+  @@index([user_id])
+  @@index([family_id])
+  @@map("refresh_token")
+}
+
+model LoginAttempt {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  user         User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  email        String    @db.VarChar(255)
+  ip           String?   @db.VarChar(64)
+  attempt_time DateTime  @default(now())
+  success      Boolean   @default(false)
+
+  @@index([email, attempt_time])
+  @@map("login_attempt")
+}
+
+model MfaChallenge {
+  challenge_id String    @id @db.VarChar(64)
+  user_id      Int
+  user         User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  created_at   DateTime  @default(now())
+  expires_at   DateTime
+  used_at      DateTime?
+
+  @@index([user_id])
+  @@map("mfa_challenge")
 }
 
 model ExpenseCategory {
