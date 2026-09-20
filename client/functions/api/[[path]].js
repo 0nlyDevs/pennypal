@@ -4,7 +4,7 @@ export const onRequest = async (context) => {
   const base = env.API_BASE?.replace(/\/+$/, "");
   if (!base) {
     return new Response(
-      "API_BASE is not configured. Set the API_BASE Pages environment variable.",
+      "API_BASE is not configured. Set the API_BASE environment variable.",
       { status: 500, headers: { "Content-Type": "text/plain" } }
     );
   }
