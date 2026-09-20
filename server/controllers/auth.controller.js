@@ -5,6 +5,8 @@ import {
   getPublicUser,
   upsertOAuthUser,
 } from "../services/auth.service.js";
+import { sendVerificationEmail } from "../services/email.service.js";
+import { prisma } from "../db/prisma.js";
 import {
   issueRefreshToken,
   rotateRefreshToken,
@@ -13,7 +15,7 @@ import {
   listSessions,
 } from "../services/session.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { BadRequestError } from "../utils/errors.js";
+import { BadRequestError, NotFoundError } from "../utils/errors.js";
 import isStrongPassword from "validator/lib/isStrongPassword.js";
 import {
   buildGoogleAuthUrl,
@@ -22,6 +24,9 @@ import {
 
 const ACCESS_COOKIE_NAME = "token";
 const REFRESH_COOKIE_NAME = "refresh";
+
+const getIssuer = () => process.env.JWT_ISSUER || "expense-tracker";
+const getAudience = () => process.env.JWT_AUDIENCE || "expense-tracker-api";
 
 const isProd = () => process.env.NODE_ENV === "production";
 
@@ -53,9 +58,19 @@ const signAccessToken = (payload) => {
   if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
   return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.ACCESS_TOKEN_TTL || "15m",
-    issuer: process.env.JWT_ISSUER || "expense-tracker",
-    audience: process.env.JWT_AUDIENCE || "expense-tracker-api",
+    issuer: getIssuer(),
+    audience: getAudience(),
     header: { kid: "access-v1" },
+  });
+};
+
+const signVerificationToken = (email) => {
+  if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
+  return jwt.sign({ email, purpose: "email_verify" }, process.env.JWT_SECRET, {
+    expiresIn: "24h",
+    issuer: getIssuer(),
+    audience: getAudience(),
+    header: { kid: "email-v1" },
   });
 };
 
@@ -218,4 +233,45 @@ export const googleCallback = asyncHandler(async (req, res) => {
 
   const frontend = getFrontendBase();
   return res.redirect(302, `${frontend.replace(/\/$/, "")}/auth/callback`);
+});
+
+export const requestVerification = asyncHandler(async (req, res) => {
+  const user = await getPublicUser(req.user.user_id);
+  if (user.email_verified_at) {
+    return res.status(200).json({ message: "Email already verified" });
+  }
+  const token = signVerificationToken(user.email);
+  const apiBase = (process.env.API_PUBLIC_URL || `${getFrontendBase()}/api`).replace(/\/$/, "");
+  const verificationUrl = `${apiBase}/auth/verify-email?token=${encodeURIComponent(token)}`;
+  const sent = await sendVerificationEmail({
+    to: user.email,
+    verificationUrl,
+  });
+  if (!sent) throw new BadRequestError("Email provider is not configured");
+  return res.json({ message: "Verification email sent" });
+});
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.query;
+  if (!token) throw new BadRequestError("Verification token required");
+  let payload;
+  try {
+    payload = jwt.verify(String(token), process.env.JWT_SECRET, {
+      algorithms: ["HS256"],
+      issuer: getIssuer(),
+      audience: getAudience(),
+    });
+  } catch {
+    throw new BadRequestError("Invalid or expired verification token");
+  }
+  if (payload?.purpose !== "email_verify" || !payload?.email) {
+    throw new BadRequestError("Invalid verification token");
+  }
+  const user = await prisma.user.findUnique({ where: { email: payload.email } });
+  if (!user) throw new NotFoundError("User not found");
+  await prisma.user.update({
+    where: { user_id: user.user_id },
+    data: { email_verified_at: user.email_verified_at ?? new Date() },
+  });
+  return res.json({ message: "Email verified" });
 });
