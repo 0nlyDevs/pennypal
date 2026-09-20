@@ -15,6 +15,7 @@ const publicUserSelect = {
   lastname: true,
   created_at: true,
   token_version: true,
+  email_verified_at: true,
 };
 
 export const signupUser = async ({ email, password, username, firstname, lastname }) => {
@@ -72,6 +73,7 @@ export const loginUser = async ({ email, password, ip, userAgent }) => {
     lastname: user.lastname,
     created_at: user.created_at,
     token_version: user.token_version,
+    email_verified_at: user.email_verified_at,
   };
   return { user: publicUser, mfaRequired: false };
 };
@@ -85,6 +87,12 @@ export const getPublicUser = async (userId) => {
 export const upsertOAuthUser = async ({ email, given_name, family_name, name }) => {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
+    if (!existing.email_verified_at) {
+      await prisma.user.update({
+        where: { user_id: existing.user_id },
+        data: { email_verified_at: new Date() },
+      });
+    }
     return {
       user_id: existing.user_id,
       email: existing.email,
@@ -92,6 +100,7 @@ export const upsertOAuthUser = async ({ email, given_name, family_name, name }) 
       firstname: existing.firstname,
       lastname: existing.lastname,
       created_at: existing.created_at,
+      email_verified_at: existing.email_verified_at ?? new Date(),
     };
   }
 
@@ -110,6 +119,7 @@ export const upsertOAuthUser = async ({ email, given_name, family_name, name }) 
       username,
       firstname: given_name || name || '',
       lastname: family_name || '',
+      email_verified_at: new Date(),
     },
     select: publicUserSelect,
   });
