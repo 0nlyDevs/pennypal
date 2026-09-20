@@ -16,8 +16,6 @@ export default function PostAuthGate() {
 
   const [openCategories, setOpenCategories] = useState(false);
 
-  const didCheckRef = useRef(false);
-
   const email = useMemo(() => user?.email ?? "", [user]);
 
   const checkNeeds = useCallback(async () => {
@@ -36,11 +34,16 @@ export default function PostAuthGate() {
     }
   }, [toast, user]);
 
+  const checkedUserIdRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (loading) return;
-    if (!user) return;
-    if (didCheckRef.current) return;
-    didCheckRef.current = true;
+    if (!user) {
+      checkedUserIdRef.current = null;
+      return;
+    }
+    if (checkedUserIdRef.current === user.user_id) return;
+    checkedUserIdRef.current = user.user_id;
     void checkNeeds();
   }, [user, loading, checkNeeds]);
 
