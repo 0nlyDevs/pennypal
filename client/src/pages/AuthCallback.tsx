@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { API_BASE } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 
 export default function AuthCallback() {
@@ -17,8 +18,7 @@ export default function AuthCallback() {
     (async () => {
       try {
         if (code) {
-          const apiBase = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
-          await fetch(`${apiBase}/auth/otc`, {
+          await fetch(`${API_BASE}/auth/otc`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ code }),
