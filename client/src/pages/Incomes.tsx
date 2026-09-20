@@ -184,10 +184,7 @@ export const Incomes = () => {
 
   return (
     <>
-      <PageContainer
-        maxWidth="7xl"
-        className="text-gray-800 dark:text-light"
-      >
+      <PageContainer className="text-gray-800 dark:text-light">
         <IncomeHeader
           totalIncome={totalIncome}
           onNewIncome={handleNewIncome}
