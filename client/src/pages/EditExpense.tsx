@@ -8,6 +8,7 @@ import { useCategories } from "../hooks/useCategories";
 import type { Expense, UpdateExpenseRequest, ExpenseType } from "../types/Expense";
 import GlassSelect from "../components/expense/GlassSelect";
 import { GlassDatePicker } from "../components/common/GlassDatePicker";
+import PageContainer from "../components/common/PageContainer";
 
 
 export const EditExpense = () => {
@@ -77,17 +78,17 @@ export const EditExpense = () => {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-2xl mx-auto pt-30">
+      <PageContainer maxWidth="2xl">
         <Skeleton variant="rect" height={400} rounded="rounded-lg" />
-      </div>
+      </PageContainer>
     );
   }
 
   if (!expense) {
     return (
-      <div className="p-6 max-w-2xl mx-auto pt-20">
+      <PageContainer maxWidth="2xl">
         <div className="text-center text-red-600">Expense not found</div>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -140,7 +141,7 @@ export const EditExpense = () => {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto pt-20 text-gray-800 dark:text-light/90 mt-10">
+    <PageContainer maxWidth="2xl" className="text-gray-800 dark:text-light/90">
       <div className="flex items-center mb-6">
         <h1 className="text-2xl font-semibold">Edit Expense</h1>
       </div>
@@ -282,6 +283,6 @@ export const EditExpense = () => {
           </Button>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };

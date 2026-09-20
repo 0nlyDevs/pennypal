@@ -4,6 +4,7 @@ import { useToast, Skeleton } from "../ui";
 import { IncomeService } from "../services/IncomeService";
 import type { Income, UpdateIncomeRequest } from "../types/Income";
 import { IncomeForm } from "../components/income";
+import PageContainer from "../components/common/PageContainer";
 
 export const EditIncome = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,17 +50,17 @@ export const EditIncome = () => {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-2xl mx-auto pt-20">
+      <PageContainer maxWidth="2xl">
         <Skeleton variant="rect" height={400} rounded="rounded-lg" />
-      </div>
+      </PageContainer>
     );
   }
 
   if (!income) {
     return (
-      <div className="p-6 max-w-2xl mx-auto pt-20">
+      <PageContainer maxWidth="2xl">
         <div className="text-center text-red-600">Income not found</div>
-      </div>
+      </PageContainer>
     );
   }
 

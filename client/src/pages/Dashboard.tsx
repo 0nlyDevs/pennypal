@@ -22,6 +22,7 @@ import MonthlyBarChart from "../components/dashboard/MonthlyBarchart";
 import DateRangeFilter from "../components/dashboard/DateRangeFilter";
 import ShowTipsButton from "../components/aiAdvice/ShowTipsButton";
 import AIAdvice from "../components/aiAdvice/AIAdvice";
+import PageContainer from "../components/common/PageContainer";
 import { motion } from "framer-motion";
 
 function Dashboard() {
@@ -210,8 +211,9 @@ function Dashboard() {
     "backdrop-blur-xl py-2 px-2 pr-5 rounded-lg border border-gray-200/70 dark:border-white/5 shadow-lg";
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 mt-30 mb-10 flex flex-col items-center gap-10 md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-      {summaryAlert.alert && (
+    <PageContainer>
+      <div className="flex flex-col items-center gap-10 md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        {summaryAlert.alert && (
         <SummaryAlert
           alert={summaryAlert.alert}
           message={summaryAlert.message}
@@ -287,7 +289,8 @@ function Dashboard() {
           <PieGraph title={"Expense Overview"} data={expenses} />
         </motion.div>
       )}
-    </div>
+      </div>
+    </PageContainer>
   );
 }
 

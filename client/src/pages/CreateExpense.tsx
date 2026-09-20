@@ -8,6 +8,7 @@ import type { CreateExpenseRequest, ExpenseType } from "../types/Expense";
 import { Loader2 } from "lucide-react";
 import GlassSelect from "../components/expense/GlassSelect";
 import { GlassDatePicker } from "../components/common/GlassDatePicker";
+import PageContainer from "../components/common/PageContainer";
 
 export const CreateExpense = () => {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ export const CreateExpense = () => {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto pt-20 text-gray-800 dark:text-light mt-10">
+    <PageContainer maxWidth="2xl" className="text-gray-800 dark:text-light">
       <div className="flex items-center mb-6">
         <h1 className="text-2xl font-semibold">Create New Expense</h1>
       </div>
@@ -235,6 +236,6 @@ export const CreateExpense = () => {
           </Button>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
