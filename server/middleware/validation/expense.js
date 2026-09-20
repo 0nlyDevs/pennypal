@@ -1,4 +1,4 @@
-// validators/expense.validator.js
+// middleware/validation/expense.js
 import { body, param, query } from "express-validator";
 
 export const createExpenseValidator = [

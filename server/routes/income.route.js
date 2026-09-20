@@ -10,8 +10,8 @@ import {
   validateIncomeCreate,
   validateIncomeUpdate,
   validateIncomeQuery,
-} from "../middleware/incomeValidation.js";
-import { validateIdParam } from "../middleware/validate.js";
+  validateIdParam,
+} from "../middleware/validation/index.js";
 
 const router = Router();
 

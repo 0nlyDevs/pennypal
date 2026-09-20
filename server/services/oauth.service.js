@@ -1,4 +1,7 @@
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import { prisma } from '../db/prisma.js';
+import { publicUserSelect, toPublicUser } from '../utils/userSelect.js';
 import { BadRequestError } from '../utils/errors.js';
 import { fetchWithTimeout } from '../utils/http.js';
 
@@ -69,4 +72,50 @@ export const exchangeGoogleCodeForProfile = async ({ code, redirectUri }) => {
   }
   const profile = await userResp.json();
   return profile;
+};
+
+const makeOAuthPassword = () =>
+  "oauth-" + crypto.randomBytes(32).toString("hex");
+
+export const upsertOAuthUser = async ({ email, given_name, family_name, name }) => {
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    if (!existing.email_verified_at) {
+      await prisma.user.update({
+        where: { user_id: existing.user_id },
+        data: { email_verified_at: new Date() },
+      });
+    }
+    return {
+      user_id: existing.user_id,
+      email: existing.email,
+      username: existing.username,
+      firstname: existing.firstname,
+      lastname: existing.lastname,
+      created_at: existing.created_at,
+      email_verified_at: existing.email_verified_at ?? new Date(),
+      totp_enabled: existing.totp_enabled,
+    };
+  }
+
+  const hashed_password = await bcrypt.hash(makeOAuthPassword(), 12);
+  const preferred =
+    (given_name && String(given_name).trim()) ||
+    (name && String(name).trim()) ||
+    (email && String(email).split("@")[0]) ||
+    "user";
+  const username = preferred.slice(0, 50);
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      hashed_password,
+      username,
+      firstname: given_name || name || "",
+      lastname: family_name || "",
+      email_verified_at: new Date(),
+    },
+    select: publicUserSelect,
+  });
+  return toPublicUser(user);
 };

@@ -7,7 +7,7 @@ import {
 import {
   validateUpdateProfile,
   validateChangePassword,
-} from "../middleware/validate.js";
+} from "../middleware/validation/index.js";
 
 const router = Router();
 

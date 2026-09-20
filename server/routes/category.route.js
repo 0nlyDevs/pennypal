@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { listCategories, createCategory, updateCategory, removeCategory } from '../controllers/category.controller.js';
-import { validateIdParam, validateCategoryCreate, validateCategoryUpdate } from '../middleware/validate.js';
+import { validateIdParam, validateCategoryCreate, validateCategoryUpdate } from '../middleware/validation/index.js';
 
 const router = Router();
 

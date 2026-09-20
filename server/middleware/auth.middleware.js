@@ -1,8 +1,5 @@
-import jwt from 'jsonwebtoken';
 import { prisma } from '../db/prisma.js';
-
-const getIssuer = () => process.env.JWT_ISSUER || 'expense-tracker';
-const getAudience = () => process.env.JWT_AUDIENCE || 'expense-tracker-api';
+import { verifyAccessToken } from '../services/token.service.js';
 
 export async function requireAuth(req, res, next) {
   try {
@@ -14,11 +11,7 @@ let token = req.cookies?.token;
     }
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET, {
-      algorithms: ['HS256'],
-      issuer: getIssuer(),
-      audience: getAudience(),
-    });
+    const payload = verifyAccessToken(token);
     if (!payload?.user_id) return res.status(401).json({ error: 'Unauthorized' });
 
     const user = await prisma.user.findUnique({

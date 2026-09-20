@@ -4,13 +4,13 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import path from "node:path";
 import { requireAuth } from "./middleware/auth.middleware.js";
-import { prisma } from "./db/prisma.js";
 import incomeRoutes from "./routes/income.route.js";
 import authRoutes from "./routes/auth.route.js";
 import categoryRoutes from "./routes/category.route.js";
 import userRoutes from "./routes/user.route.js";
 import expenseRoutes from "./routes/expense.route.js";
 import summaryRoutes from "./routes/summary.route.js";
+import { root, health, dbCheck } from "./controllers/ops.controller.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -40,26 +40,9 @@ app.use("/api/user", requireAuth, userRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/summary", requireAuth, summaryRoutes);
 
-app.get("/", (req, res) => {
-  res.json({ message: "Expense Tracker API", status: "running" });
-});
-
-app.get("/api/health", (req, res) => {
-  res.json({ status: "OK" });
-});
-
-app.get("/api/db-check", async (_req, res) => {
-  try {
-    const result = await prisma.$queryRaw`SELECT NOW() as now`;
-    const now = Array.isArray(result)
-      ? result[0]?.now ?? result[0]?.NOW ?? result[0]
-      : result?.now ?? result;
-    res.json({ ok: true, now });
-  } catch (err) {
-    console.error("DB check failed:", err);
-    res.status(500).json({ ok: false, error: "DB connection failed" });
-  }
-});
+app.get("/", root);
+app.get("/api/health", health);
+app.get("/api/db-check", dbCheck);
 
 // global error handler (keep last)
 // eslint-disable-next-line no-unused-vars
