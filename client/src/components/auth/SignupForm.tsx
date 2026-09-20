@@ -9,7 +9,7 @@ import PasswordStrength from "./PasswordStrength";
 import { useToast } from "../../ui";
 import UsernameModal from "./UsernameModal";
 import CategoriesOnboardingModal from "./CategoriesOnboardingModal";
-import { useAuth } from "../../hooks/useAuth";
+import { useProfile } from "../../hooks/useProfile";
 
 export default function SignupForm({
   onSubmit,
@@ -31,7 +31,7 @@ export default function SignupForm({
   const [usernameModal, setUsernameModal] = useState("");
   const [savingUsername, setSavingUsername] = useState(false);
   const toast = useToast()
-  const { updateProfile } = useAuth();
+  const { updateProfile } = useProfile();
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
