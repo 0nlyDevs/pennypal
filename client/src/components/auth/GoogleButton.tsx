@@ -1,4 +1,5 @@
 import { Button } from "../../ui";
+import { API_BASE } from "../../lib/api";
 
 type GoogleButtonProps = {
   label?: string;
@@ -13,8 +14,7 @@ export default function GoogleButton({
   fullWidth = true,
   className,
 }: GoogleButtonProps) {
-  const apiBase = import.meta.env.VITE_API_BASE || "";
-  const targetUrl = redirectUrl || (apiBase ? `${apiBase.replace(/\/$/, "")}/auth/google` : "/api/auth/google");
+  const targetUrl = redirectUrl || `${API_BASE}/auth/google`;
   const GoogleIcon = (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width={18} height={18}>
       <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.44 31.91 29.065 35 24 35c-6.075 0-11-4.925-11-11s4.925-11 11-11c2.802 0 5.358 1.058 7.303 2.797l5.657-5.657C33.64 6.053 28.979 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c10.492 0 19-8.508 19-19 0-1.341-.138-2.651-.389-3.917z"/>

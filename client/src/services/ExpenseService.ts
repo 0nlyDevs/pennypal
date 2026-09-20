@@ -1,12 +1,11 @@
 import { DefaultService } from "../api/services/DefaultService";
+import { API_BASE } from "../lib/api";
 import { useMascotStore } from "../stores/mascotStore";
 import type {
   Expense,
   CreateExpenseRequest,
   UpdateExpenseRequest,
 } from "../types/Expense";
-
-const API_URL = import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
 type ApiEnvelope<T> = { success: boolean; data: T };
 function hasData<T>(r: unknown): r is { data: T } {
   return (
@@ -78,7 +77,7 @@ export class ExpenseService {
     }
     if (expenseData.receipt) fd.append("receipt", expenseData.receipt);
 
-    const res = await fetch(`${API_URL}/expenses`, {
+    const res = await fetch(`${API_BASE}/expenses`, {
       method: "POST",
       body: fd,
       credentials: "include",
@@ -102,7 +101,7 @@ export class ExpenseService {
     appendIf(fd, "endDate", expenseData.endDate);
     if (expenseData.receipt) fd.append("receipt", expenseData.receipt);
 
-    const res = await fetch(`${API_URL}/expenses/${id}`, {
+    const res = await fetch(`${API_BASE}/expenses/${id}`, {
       method: "PUT",
       body: fd,
       credentials: "include",
@@ -115,7 +114,7 @@ export class ExpenseService {
 
   // DELETE expense
   static async deleteExpense(id: string) {
-    const res = await fetch(`/api/expenses/${id}`, {
+    const res = await fetch(`${API_BASE}/expenses/${id}`, {
       method: "DELETE",
       credentials: "include",
     });

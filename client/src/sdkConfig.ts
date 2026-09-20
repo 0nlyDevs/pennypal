@@ -1,8 +1,8 @@
-
 import { OpenAPI } from './api';
+import { API_BASE } from './lib/api';
 
-// base URL: use env override or default to server dev URL
-OpenAPI.BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8080/api';
+// base URL: relative /api in production, env override for local dev
+OpenAPI.BASE = API_BASE;
 
 // Credentials: enable cookies for auth-backed endpoints
 OpenAPI.WITH_CREDENTIALS = true;
