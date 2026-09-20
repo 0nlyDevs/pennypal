@@ -53,6 +53,9 @@ const signAccessToken = (payload) => {
   if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
   return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.ACCESS_TOKEN_TTL || "15m",
+    issuer: process.env.JWT_ISSUER || "expense-tracker",
+    audience: process.env.JWT_AUDIENCE || "expense-tracker-api",
+    header: { kid: "access-v1" },
   });
 };
 
