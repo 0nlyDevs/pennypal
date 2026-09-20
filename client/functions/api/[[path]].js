@@ -1,9 +1,13 @@
-const DEFAULT_API_BASE = "https://pennypal-ya7b.onrender.com";
-
 export const onRequest = async (context) => {
   const { request, env } = context;
   const url = new URL(request.url);
-  const base = (env.API_BASE || DEFAULT_API_BASE).replace(/\/+$/, "");
+  const base = env.API_BASE?.replace(/\/+$/, "");
+  if (!base) {
+    return new Response(
+      "API_BASE is not configured. Set the API_BASE Pages environment variable.",
+      { status: 500, headers: { "Content-Type": "text/plain" } }
+    );
+  }
   const upstream = new URL(`${base}${url.pathname}${url.search}`);
 
   const headers = new Headers(request.headers);
