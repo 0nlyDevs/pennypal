@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { API_BASE } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 
 export default function AuthCallback() {
@@ -10,10 +11,20 @@ export default function AuthCallback() {
   const { refresh } = useAuth();
 
   useEffect(() => {
-    // the backend should have set the session cookie. Just refresh the session and redirect.
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get("code");
     const from = (location.state && typeof location.state === 'object' && location.state?.from) || "/dashboard";
+
     (async () => {
       try {
+        if (code) {
+          await fetch(`${API_BASE}/auth/otc`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code }),
+            credentials: "include",
+          });
+        }
         await refresh();
       } finally {
         navigate(from, { replace: true });
