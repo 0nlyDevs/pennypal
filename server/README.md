@@ -299,6 +299,24 @@ Common status codes:
 - 409 Conflict — duplicates, invariant violations
 - 500 Internal Server Error — unhandled errors
 
+## Testing
+
+Integration tests run against a **dedicated** Postgres database with vitest and supertest:
+
+```bash
+cp .env.test.example .env.test   # point DATABASE_URL at a scratch database
+npm test
+```
+
+`npm test` regenerates the Prisma Client, syncs the schema to the test database
+(`prisma db push`), and runs the suite in `server/tests/`. The global setup
+refuses to run against the local/dev `pannypal` database, so it is safe to run
+alongside development.
+
+Covered flows: session cookies + rotation/reuse detection, JWT issuer/audience/
+algorithm pinning plus `token_version` invalidation, TOTP MFA (enroll, login,
+single-use challenge, backup codes), login lockout, and email verification.
+
 ## Troubleshooting
 
 - ❌ CORS blocked
