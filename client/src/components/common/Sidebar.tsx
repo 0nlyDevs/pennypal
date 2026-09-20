@@ -6,6 +6,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import LogoutButton from "./LogoutButton";
 
 const items = [
@@ -26,9 +27,9 @@ export default function Sidebar() {
               <div className="flex h-full flex-col justify-between">
                 <div className="flex flex-col gap-3">
                   {items.slice(0, 4).map(({ label, icon: Icon, href }) => (
-                    <a
+                    <Link
                       key={label}
-                      href={href}
+                      to={href}
                       className="
                         flex items-center gap-3 rounded-xl px-3 py-3
                         hover:bg-gray-900/3 focus:outline-none focus:ring-2 ring-primary/30
@@ -42,15 +43,15 @@ export default function Sidebar() {
                       <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                         {label}
                       </span>
-                    </a>
+                    </Link>
                   ))}
                 </div>
 
                 <div className="flex flex-col gap-3">
                   {items.slice(4).map(({ label, icon: Icon, href }) => (
-                    <a
+                    <Link
                       key={label}
-                      href={href}
+                      to={href}
                       className="
                         flex items-center gap-3 rounded-xl px-3 py-3
                         hover:bg-gray-900/5 focus:outline-none focus:ring-2 ring-primary/30
@@ -64,7 +65,7 @@ export default function Sidebar() {
                       <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                         {label}
                       </span>
-                    </a>
+                    </Link>
                   ))}
 
                   <LogoutButton
