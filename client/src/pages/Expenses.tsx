@@ -8,6 +8,7 @@ import { Filter, Plus, RefreshCcw, X, List } from "lucide-react";
 import GlassSelect from "../components/expense/GlassSelect";
 import { GlassDatePicker } from "../components/common/GlassDatePicker";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
+import PageContainer from "../components/common/PageContainer";
 
 export default function Expenses() {
   const [start, setStart] = useState<Date | null>(null);
@@ -68,7 +69,7 @@ const itemVariants = {
   };
 
   return (
-    <div className="relative z-2 mb-10 mt-30 xl:ml-29 lg:ml-20 2xl:mx-auto text-gray-800 dark:text-light/90 max-w-6xl px-6">
+    <PageContainer className="text-gray-800 dark:text-light/90">
       <div className="flex items-center justify-between mb-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-4xl font-bold">Expenses</h1>
@@ -223,6 +224,6 @@ const itemVariants = {
           </motion.ul>
         )}
       </motion.div>
-    </div>
+    </PageContainer>
   );
 }

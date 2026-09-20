@@ -21,6 +21,7 @@ import CategoryDetailsModal from "../components/categories/modals/CategoryDetail
 import DataHeader from "../components/categories/DataHeader";
 import Pagination from "../components/categories/Pagination";
 import BulkFloatingAction from "../components/categories/BulkFloatingAction";
+import PageContainer from "../components/common/PageContainer";
 
 export default function Categories() {
   const toast = useToast();
@@ -159,7 +160,7 @@ export default function Categories() {
   };
 
   return (
-    <div className="relative z-2 mb-10 mt-30 mx-auto text-light max-w-6xl px-4 sm:px-6 md:pl-10">
+    <PageContainer className="text-light">
       <CategoriesHeader
         bulkMode={bulkMode}
         onToggleBulkMode={() => toggleBulkMode()}
@@ -303,6 +304,6 @@ export default function Categories() {
           remove(c.category_id);
         }}
       />
-    </div>
+    </PageContainer>
   );
 }

@@ -14,6 +14,7 @@ import {
   ProfileInfo,
   SecuritySettings,
 } from "../components/profile";
+import PageContainer from "../components/common/PageContainer";
 
 export const Profile: React.FC = () => {
   const { user, loading, error, fetchProfile, updateProfile, changePassword } =
@@ -49,7 +50,7 @@ export const Profile: React.FC = () => {
   }
 
   return (
-    <div className="h-[76dvh]  mt-33 2xl:mx-auto px-6 xl:ml-29 lg:ml-20">
+    <PageContainer className="h-[76dvh]">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
           <div className="lg:col-span-2">
@@ -84,6 +85,6 @@ export const Profile: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };

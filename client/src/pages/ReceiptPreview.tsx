@@ -71,7 +71,7 @@ export default function ReceiptPreviewMock() {
   }
 
   return (
-    <div className="mx-auto md:ml-36 max-w-6xl p-4 mt-20 sm:p-6 flex flex-col gap-3">
+    <div className="mx-auto max-w-6xl p-4 mt-20 sm:p-6 flex flex-col gap-3">
       <div className="relative overflow-hidden rounded-3xl border border-black/10 bg-gradient-to-r from-indigo-500/10 via-fuchsia-500/10 to-emerald-500/10 p-[1px] dark:border-white/10">
         <div className="rounded-lg bg-white/70 p-5 backdrop-blur-xl dark:bg-zinc-900/60">
           <div className="flex flex-wrap items-center justify-between gap-4">
