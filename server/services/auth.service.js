@@ -17,6 +17,7 @@ const publicUserSelect = {
   created_at: true,
   token_version: true,
   email_verified_at: true,
+  totp_enabled: true,
 };
 
 export const signupUser = async ({ email, password, username, firstname, lastname }) => {
@@ -84,6 +85,7 @@ export const loginUser = async ({ email, password, ip, userAgent }) => {
     created_at: user.created_at,
     token_version: user.token_version,
     email_verified_at: user.email_verified_at,
+    totp_enabled: user.totp_enabled,
   };
   return { user: publicUser, mfaRequired: false };
 };
@@ -111,6 +113,7 @@ export const upsertOAuthUser = async ({ email, given_name, family_name, name }) 
       lastname: existing.lastname,
       created_at: existing.created_at,
       email_verified_at: existing.email_verified_at ?? new Date(),
+      totp_enabled: existing.totp_enabled,
     };
   }
 
