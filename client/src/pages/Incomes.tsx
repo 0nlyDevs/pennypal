@@ -5,6 +5,7 @@ import { useIncomes } from "../hooks/useIncomes";
 import { useIncomeFilters } from "../hooks/useIncomeFilters";
 import { useIncomeCharts } from "../hooks/useIncomeCharts";
 import { useIncomeModals } from "../hooks/useIncomeModals";
+import PageContainer from "../components/common/PageContainer";
 import { motion } from "framer-motion";
 import { Plus, Wallet, X, Download } from "lucide-react";
 import type { Income } from "../types/Income";
@@ -183,7 +184,10 @@ export const Incomes = () => {
 
   return (
     <>
-      <div className="relative z-2 mb-10 mt-30 text-gray-800 dark:text-light max-w-7xl px-6 xl:ml-29 lg:ml-20 2xl:mx-auto">
+      <PageContainer
+        maxWidth="7xl"
+        className="text-gray-800 dark:text-light"
+      >
         <IncomeHeader
           totalIncome={totalIncome}
           onNewIncome={handleNewIncome}
@@ -309,7 +313,7 @@ export const Incomes = () => {
             onRefetch={refetch}
           />
         </motion.div>
-      </div>
+      </PageContainer>
 
       {/* hidden pdf template when exporting */}
       <div className="fixed -left-[10000px] top-0">
