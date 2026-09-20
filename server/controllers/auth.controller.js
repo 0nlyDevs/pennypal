@@ -39,6 +39,8 @@ const getAudience = () => process.env.JWT_AUDIENCE || "expense-tracker-api";
 
 const isProd = () => process.env.NODE_ENV === "production";
 
+const stripMaxAge = ({ maxAge, ...rest }) => rest;
+
 const accessCookieOptions = () => ({
   httpOnly: true,
   secure: isProd(),
@@ -99,9 +101,9 @@ const setAuthCookies = async (req, res, user) => {
 };
 
 const clearAuthCookies = (res) => {
-  res.clearCookie(ACCESS_COOKIE_NAME, accessCookieOptions());
-  res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
-  res.clearCookie("mfa_challenge", mfaCookieOptions());
+  res.clearCookie(ACCESS_COOKIE_NAME, stripMaxAge(accessCookieOptions()));
+  res.clearCookie(REFRESH_COOKIE_NAME, stripMaxAge(refreshCookieOptions()));
+  res.clearCookie("mfa_challenge", stripMaxAge(mfaCookieOptions()));
 };
 
 export const signup = asyncHandler(async (req, res) => {
@@ -164,7 +166,7 @@ export const refresh = asyncHandler(async (req, res) => {
     accessCookieOptions()
   );
   res.cookie(REFRESH_COOKIE_NAME, session.token, refreshCookieOptions());
-  res.clearCookie("mfa_challenge", mfaCookieOptions());
+  res.clearCookie("mfa_challenge", stripMaxAge(mfaCookieOptions()));
   return res.json(user);
 });
 
@@ -223,7 +225,7 @@ export const googleCallback = asyncHandler(async (req, res) => {
     throw new BadRequestError("Invalid OAuth state");
   }
 
-  res.clearCookie("g_state", oauthCookieOpts());
+  res.clearCookie("g_state", stripMaxAge(oauthCookieOpts()));
 
   const redirectUri = getRedirectUri(req);
   const profile = await exchangeGoogleCodeForProfile({
@@ -372,6 +374,6 @@ export const mfaLogin = asyncHandler(async (req, res) => {
 
   const publicUser = await getPublicUser(userId);
   await setAuthCookies(req, res, publicUser);
-  res.clearCookie("mfa_challenge", mfaCookieOptions());
+  res.clearCookie("mfa_challenge", stripMaxAge(mfaCookieOptions()));
   return res.json(publicUser);
 });
