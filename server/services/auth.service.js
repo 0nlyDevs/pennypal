@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { prisma } from '../db/prisma.js';
 import { revokeAllSessionTokens } from './session.service.js';
+import { createMfaChallenge } from './mfa.service.js';
 import { ConflictError, HttpError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
 
 const MAX_FAILED_ATTEMPTS = parseInt(process.env.MAX_FAILED_LOGIN_ATTEMPTS || "5", 10);
@@ -64,6 +65,15 @@ export const loginUser = async ({ email, password, ip, userAgent }) => {
   }
 
   await prisma.loginAttempt.deleteMany({ where: { email } });
+
+  if (user.totp_enabled) {
+    const challenge_id = await createMfaChallenge(user.user_id);
+    return {
+      user: null,
+      mfaRequired: true,
+      challenge: { challenge_id },
+    };
+  }
 
   const publicUser = {
     user_id: user.user_id,
