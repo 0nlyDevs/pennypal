@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DefaultService } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
+import { useProfile } from "../../hooks/useProfile";
 import UsernameModal from "./UsernameModal";
 import CategoriesOnboardingModal from "./CategoriesOnboardingModal";
 import type { Category } from "../../types/Auth";
 import { useToast } from "../../ui";
 
 export default function PostAuthGate() {
-  const { user, loading, updateProfile } = useAuth();
+  const { user, loading } = useAuth();
+  const { updateProfile } = useProfile();
   const toast = useToast();
 
   const [openUsername, setOpenUsername] = useState(false);

@@ -11,7 +11,7 @@ import {
   getExpenseValidator,
   deleteExpenseValidator,
   listExpensesValidator,
-} from "../validators/expense.validator.js";
+} from "../middleware/validation/index.js";
 import { upload } from "../middleware/upload.middleware.js";
 
 const router = express.Router();

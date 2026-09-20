@@ -1,9 +1,10 @@
 import {
   updateUserProfile,
   changeUserPassword,
-  getPublicUser,
-} from "../services/auth.service.js";
+} from "../services/profile.service.js";
+import { getPublicUser } from "../services/auth.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { BadRequestError, UnauthorizedError } from "../utils/errors.js";
 
 export const getUserProfile = asyncHandler(async (req, res) => {
   const user = await getPublicUser(req.user.user_id);

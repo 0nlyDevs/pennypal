@@ -1,8 +1,12 @@
 import { Router } from 'express';
-import { signup, login, logout, logoutAll, sessions, me, refresh, googleAuth, googleCallback, requestVerification, verifyEmail, mfaSetup, mfaVerify, mfaDisable, mfaLogin } from '../controllers/auth.controller.js';
+import { signup, login } from '../controllers/auth.controller.js';
+import { refresh, logout, logoutAll, sessions, me } from '../controllers/session.controller.js';
+import { requestVerification, verifyEmail } from '../controllers/verification.controller.js';
+import { googleAuth, googleCallback } from '../controllers/oauth.controller.js';
+import { mfaSetup, mfaVerify, mfaDisable, mfaLogin } from '../controllers/mfa.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { authLimiter } from '../middleware/rateLimit.js';
-import { validateSignup, validateLogin } from '../middleware/validate.js';
+import { validateSignup, validateLogin } from '../middleware/validation/index.js';
 
 const router = Router();
 

@@ -91,3 +91,81 @@ export const requireBackupCodeToken = (req) => {
   if (!token) throw new BadRequestError('Token required');
   return String(token).trim();
 };
+
+export const getMfaSetup = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { user_id: userId },
+    select: { totp_secret: true, email: true },
+  });
+  let secret = user?.totp_secret;
+  if (!secret) {
+    secret = generateSecret();
+    await prisma.user.update({
+      where: { user_id: userId },
+      data: { totp_secret: secret },
+    });
+  }
+  return { secret, otpauth_url: generateOtpauthUrl({ secret, email: user.email }) };
+};
+
+export const enableMfa = async ({ userId, token }) => {
+  if (!token) throw new BadRequestError('Token required');
+  const user = await prisma.user.findUnique({
+    where: { user_id: userId },
+    select: { totp_secret: true, totp_enabled: true },
+  });
+  if (!user?.totp_secret) throw new BadRequestError('MFA not initialized');
+  if (user.totp_enabled) return { message: 'MFA already enabled' };
+  if (!verifyToken({ token, secret: user.totp_secret })) {
+    throw new BadRequestError('Invalid verification code');
+  }
+  const backupCodes = generateBackupCodes();
+  await prisma.user.update({
+    where: { user_id: userId },
+    data: {
+      totp_enabled: true,
+      backup_codes: hashBackupCodes(backupCodes),
+    },
+  });
+  return { message: 'MFA enabled', backupCodes };
+};
+
+export const disableMfa = async ({ userId, token }) => {
+  if (!token) throw new BadRequestError('Token required');
+  const user = await prisma.user.findUnique({
+    where: { user_id: userId },
+    select: { totp_secret: true },
+  });
+  if (!user?.totp_secret) throw new BadRequestError('MFA not enabled');
+  if (!verifyToken({ token, secret: user.totp_secret })) {
+    throw new BadRequestError('Invalid verification code');
+  }
+  await prisma.user.update({
+    where: { user_id: userId },
+    data: { totp_enabled: false, totp_secret: null, backup_codes: [] },
+  });
+  return { message: 'MFA disabled' };
+};
+
+export const completeMfaLogin = async ({ challengeId, token }) => {
+  const userId = await consumeMfaChallenge(challengeId);
+  const user = await prisma.user.findUnique({
+    where: { user_id: userId },
+    select: { totp_enabled: true, totp_secret: true },
+  });
+  if (!user?.totp_enabled) throw new BadRequestError('MFA is not enabled');
+
+  const validTotp = verifyToken({ token, secret: user.totp_secret });
+  if (!validTotp) {
+    let backupOk = false;
+    try {
+      await verifyBackupCode(userId, token);
+      backupOk = true;
+    } catch {
+      backupOk = false;
+    }
+    if (!backupOk) throw new UnauthorizedError('Invalid verification code');
+  }
+
+  return userId;
+};
