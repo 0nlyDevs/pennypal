@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useToast } from "../ui";
+import { useToast, Skeleton } from "../ui";
 import { IncomeService } from "../services/IncomeService";
 import { useIncomes } from "../hooks/useIncomes";
 import { useIncomeFilters } from "../hooks/useIncomeFilters";
@@ -200,6 +200,7 @@ export const Incomes = () => {
           totalIncomeThisMonth={totalIncomeThisMonth}
           totalIncome={totalIncome}
           incomeCount={localIncomes.length}
+          loading={loading}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -222,8 +223,12 @@ export const Incomes = () => {
 
             <div className="flex gap-4 h-52 relative z-10">
               {loading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="size-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
+                <div className="flex-1 flex gap-4">
+                  <Skeleton className="w-36 rounded-xl bg-gray-200/70 dark:bg-white/10" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-14 rounded-lg bg-gray-200/70 dark:bg-white/10" />
+                    <Skeleton className="h-14 rounded-lg bg-gray-200/60 dark:bg-white/5" />
+                  </div>
                 </div>
               ) : localIncomes.length === 0 ? (
                 <div

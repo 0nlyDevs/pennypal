@@ -9,6 +9,7 @@ import GlassSelect from "../components/expense/GlassSelect";
 import { GlassDatePicker } from "../components/common/GlassDatePicker";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import PageContainer from "../components/common/PageContainer";
+import SkeletonTableRows from "../components/common/skeletons/SkeletonTableRows";
 
 export default function Expenses() {
   const [start, setStart] = useState<Date | null>(null);
@@ -192,11 +193,7 @@ const itemVariants = {
             </Button>
           </div>
         </div>
-        {loading && (
-          <div className="flex items-center justify-center py-10">
-            <div className="size-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
-          </div>
-        )}
+        {loading && <SkeletonTableRows bare rows={5} />}
 
         {error && (
           <div className="text-red-400 bg-red-400/10 border border-red-400/30 p-3 rounded-md">

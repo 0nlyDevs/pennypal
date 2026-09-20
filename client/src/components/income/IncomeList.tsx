@@ -9,6 +9,7 @@ import type { Income } from "../../types/Income";
 import { Button } from "../../ui";
 import { Eye, Edit3, Trash2, RefreshCw } from "lucide-react";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import SkeletonTableRows from "../common/skeletons/SkeletonTableRows";
 
 interface IncomeListProps {
   incomes: Income[];
@@ -55,15 +56,7 @@ export const IncomeList = forwardRef<IncomeListRef, IncomeListProps>(
       }
     }, [incomes.length, currentPage, itemsPerPage]);
     if (loading) {
-      return (
-        <div className="w-full h-96 flex items-center justify-center">
-          <div
-            className="size-10 mx-auto animate-spin rounded-full border-4 border-cyan-400 border-t-transparent"
-            role="status"
-            aria-label="Loading"
-          ></div>
-        </div>
-      );
+      return <SkeletonTableRows bare rows={3} />;
     }
 
     return (
