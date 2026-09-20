@@ -204,14 +204,13 @@ function Dashboard() {
     setEndDate(defaultEndDate);
   };
 
+  const pieCardClass =
+    "lg:col-span-1 flex flex-col md:h-[80%] items-center gap-4 w-full " +
+    "bg-white/80 dark:bg-transparent dark:bg-gradient-to-br dark:from-primary/20 dark:to-primary-dark/10 " +
+    "backdrop-blur-xl py-2 px-2 pr-5 rounded-lg border border-gray-200/70 dark:border-white/5 shadow-lg";
+
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{opacity:1, scale:1}}
-      // whileInView={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="mx-auto w-full max-w-7xl px-6 mt-30 mb-10 flex flex-col items-center gap-10 md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
-    >
+    <div className="mx-auto w-full max-w-7xl px-6 mt-30 mb-10 flex flex-col items-center gap-10 md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
       {summaryAlert.alert && (
         <SummaryAlert
           alert={summaryAlert.alert}
@@ -241,32 +240,30 @@ function Dashboard() {
           </div>
         </motion.div>
         {/* CARD */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          {loading || expensesLoading ? (
-            <>
-              <SkeletonStatCard />
-              <SkeletonStatCard />
-              <SkeletonStatCard />
-              <SkeletonStatCard />
-            </>
-          ) : (
-            <>
-              {toDisplay.map((item, idx) => (
-                <MiniStatCard key={idx} {...item} filterWasUsed={filterWasUsed} />
-              ))}
-              <MiniStatCard
-                key={"sold"}
-                {...soldToDisplay}
-                filterWasUsed={filterWasUsed}
-              />
-            </>
-          )}
-        </motion.div>
+        {loading || expensesLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            {toDisplay.map((item, idx) => (
+              <MiniStatCard key={idx} {...item} filterWasUsed={filterWasUsed} />
+            ))}
+            <MiniStatCard
+              key={"sold"}
+              {...soldToDisplay}
+              filterWasUsed={filterWasUsed}
+            />
+          </motion.div>
+        )}
 
         {/* BARCHART */}
         {lastSixthLoading ? (
@@ -276,23 +273,21 @@ function Dashboard() {
         )}
       </div>
       {/* PIE */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="lg:col-span-1 flex flex-col md:h-[80%] items-center gap-4 w-full 
-            bg-white/80 
-            dark:bg-transparent dark:bg-gradient-to-br dark:from-primary/20 dark:to-primary-dark/10
-            backdrop-blur-xl
-            py-2 px-2 pr-5 rounded-lg border border-gray-200/70 dark:border-white/5 shadow-lg"
-      >
-        {expensesLoading ? (
+      {expensesLoading ? (
+        <div className={pieCardClass}>
           <SkeletonChart bare height="h-80" bars={6} />
-        ) : (
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className={pieCardClass}
+        >
           <PieGraph title={"Expense Overview"} data={expenses} />
-        )}
-      </motion.div>
-    </motion.div>
+        </motion.div>
+      )}
+    </div>
   );
 }
 
