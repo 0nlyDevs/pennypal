@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, DefaultService, type PublicUser } from '../api';
+import { API_BASE } from '../lib/api';
 import { UserService } from '../services/UserService';
 
 // SDK config is applied globally in src/sdkConfig.ts
@@ -101,13 +102,41 @@ export const useAuth = () => {
     setLoading(true);
     setError(null);
     try {
-      await DefaultService.postAuthLogin({ email, password });
+      const result = await DefaultService.postAuthLogin({ email, password });
+      if ((result as { mfaRequired?: boolean })?.mfaRequired) {
+        return { mfaRequired: true as const };
+      }
+      const u = await DefaultService.getAuthMe();
+      setUser(u);
+      return { mfaRequired: false as const, user: u };
+    } catch (err) {
+      const msg = toFriendlyAuthMessage(err, 'login');
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const completeMfaLogin = useCallback(async (code: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/auth/mfa/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: code }),
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || 'Invalid verification code');
+      }
       const u = await DefaultService.getAuthMe();
       setUser(u);
       return u;
     } catch (err) {
-      const msg = toFriendlyAuthMessage(err, 'login');
-      setError(msg);
+      setError(extractErrorMessage(err, 'Invalid verification code'));
       throw err;
     } finally {
       setLoading(false);
@@ -168,8 +197,8 @@ export const useAuth = () => {
   );
 
   const value = useMemo(
-    () => ({ user, loading, error, login, signup, logout, refresh: me, updateProfile }),
-    [user, loading, error, login, signup, logout, me, updateProfile]
+    () => ({ user, loading, error, login, completeMfaLogin, signup, logout, refresh: me, updateProfile }),
+    [user, loading, error, login, completeMfaLogin, signup, logout, me, updateProfile]
   );
 
   return value;
