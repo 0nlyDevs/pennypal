@@ -2,7 +2,10 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { prisma } from '../db/prisma.js';
 import { revokeAllSessionTokens } from './session.service.js';
-import { ConflictError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
+import { ConflictError, HttpError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
+
+const MAX_FAILED_ATTEMPTS = parseInt(process.env.MAX_FAILED_LOGIN_ATTEMPTS || "5", 10);
+const LOCKOUT_WINDOW_MS = parseInt(process.env.LOCKOUT_WINDOW_MS || String(15 * 60 * 1000), 10);
 
 const publicUserSelect = {
   user_id: true,
@@ -36,8 +39,30 @@ export const loginUser = async ({ email, password, ip, userAgent }) => {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new UnauthorizedError('Invalid credentials');
 
+  const recentFailures = await prisma.loginAttempt.count({
+    where: {
+      email,
+      success: false,
+      attempt_time: { gte: new Date(Date.now() - LOCKOUT_WINDOW_MS) },
+    },
+  });
+  if (recentFailures >= MAX_FAILED_ATTEMPTS) {
+    throw new HttpError('Too many failed attempts. Please try again later.', 429);
+  }
+
   const ok = await bcrypt.compare(password, user.hashed_password);
-  if (!ok) throw new UnauthorizedError('Invalid credentials');
+  if (!ok) {
+    await prisma.loginAttempt.create({
+      data: {
+        user_id: user.user_id,
+        email,
+        ip: ip?.slice(0, 64) || null,
+      },
+    });
+    throw new UnauthorizedError('Invalid credentials');
+  }
+
+  await prisma.loginAttempt.deleteMany({ where: { email } });
 
   const publicUser = {
     user_id: user.user_id,
