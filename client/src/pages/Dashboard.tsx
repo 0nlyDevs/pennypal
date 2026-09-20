@@ -4,6 +4,8 @@ import PieGraph from "../components/dashboard/PieGraph";
 import { useIncomes } from "../hooks/useIncomes";
 import { computeValueTotal } from "../utils/computeValueTotal";
 import MiniStatCard from "../components/dashboard/DisplayCard";
+import SkeletonStatCard from "../components/common/skeletons/SkeletonStatCard";
+import SkeletonChart from "../components/common/skeletons/SkeletonChart";
 import { useToast } from "../ui";
 import {
   useLastSixthMonthSummary,
@@ -25,7 +27,8 @@ import { motion } from "framer-motion";
 function Dashboard() {
   const { data: summaryAlert } = useSummaryAlert();
   const [alertOpen, setAlertOpen] = useState<boolean>(true);
-  const { data: lastSixthMonthSummary } = useLastSixthMonthSummary();
+  const { data: lastSixthMonthSummary, loading: lastSixthLoading } =
+    useLastSixthMonthSummary();
   const now = new Date();
   const [showTips, setShowTips] = useState<boolean>(false);
 
@@ -244,18 +247,33 @@ function Dashboard() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-          {toDisplay.map((item, idx) => (
-            <MiniStatCard key={idx} {...item} filterWasUsed={filterWasUsed} />
-          ))}
-          <MiniStatCard
-            key={"sold"}
-            {...soldToDisplay}
-            filterWasUsed={filterWasUsed}
-          />
+          {loading || expensesLoading ? (
+            <>
+              <SkeletonStatCard />
+              <SkeletonStatCard />
+              <SkeletonStatCard />
+              <SkeletonStatCard />
+            </>
+          ) : (
+            <>
+              {toDisplay.map((item, idx) => (
+                <MiniStatCard key={idx} {...item} filterWasUsed={filterWasUsed} />
+              ))}
+              <MiniStatCard
+                key={"sold"}
+                {...soldToDisplay}
+                filterWasUsed={filterWasUsed}
+              />
+            </>
+          )}
         </motion.div>
 
         {/* BARCHART */}
-        <MonthlyBarChart data={lastSixthMonthSummary} />
+        {lastSixthLoading ? (
+          <SkeletonChart height="h-[380px]" />
+        ) : (
+          <MonthlyBarChart data={lastSixthMonthSummary} />
+        )}
       </div>
       {/* PIE */}
       <motion.div
@@ -268,7 +286,11 @@ function Dashboard() {
             backdrop-blur-xl
             py-2 px-2 pr-5 rounded-lg border border-gray-200/70 dark:border-white/5 shadow-lg"
       >
-        <PieGraph title={"Expense Overview"} data={expenses} />
+        {expensesLoading ? (
+          <SkeletonChart bare height="h-80" bars={6} />
+        ) : (
+          <PieGraph title={"Expense Overview"} data={expenses} />
+        )}
       </motion.div>
     </motion.div>
   );

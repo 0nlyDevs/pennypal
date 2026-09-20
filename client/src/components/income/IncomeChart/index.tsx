@@ -1,6 +1,7 @@
 import { BarChart3, TrendingUp } from "lucide-react";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { LineChart, type LineChartData } from "./LineChart";
+import SkeletonChart from "../../common/skeletons/SkeletonChart";
 
 interface IncomeChartProps {
   lineChartData: LineChartData[];
@@ -19,11 +20,7 @@ export const IncomeChart = ({
 }: IncomeChartProps) => {
   const { isDark } = useTheme();
   if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
-      </div>
-    );
+    return <SkeletonChart bare height="h-52" bars={6} />;
   }
 
   if (isEmpty) {

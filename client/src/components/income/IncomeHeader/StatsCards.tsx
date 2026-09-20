@@ -2,19 +2,32 @@ import { Calendar, Wallet, Target, TrendingUp, Plus } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import CountUp from "react-countup";
 import { motion } from "framer-motion";
+import SkeletonStatCard from "../../common/skeletons/SkeletonStatCard";
 
 interface StatsCardsProps {
   totalIncome: number;
   incomeCount: number;
   totalIncomeThisMonth: number;
+  loading?: boolean;
 }
 
 export const StatsCards = ({
   totalIncome,
   incomeCount,
   totalIncomeThisMonth,
+  loading,
 }: StatsCardsProps) => {
   const averageIncome = incomeCount > 0 ? totalIncome / incomeCount : 0;
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+      </div>
+    );
+  }
 
   return (
     <motion.div
