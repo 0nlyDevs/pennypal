@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { signup, login, logout, logoutAll, sessions, me, refresh, googleAuth, googleCallback } from '../controllers/auth.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
+import { authLimiter } from '../middleware/rateLimit.js';
 import { validateSignup, validateLogin } from '../middleware/validate.js';
 
 const router = Router();
+
+router.use(authLimiter);
 
 router.post('/signup', validateSignup, signup);
 router.post('/login', validateLogin, login);
