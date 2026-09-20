@@ -12,6 +12,7 @@ import {
   PasswordForm,
   ProfileForm,
   ProfileInfo,
+  SecuritySettings,
 } from "../components/profile";
 
 export const Profile: React.FC = () => {
@@ -70,10 +71,13 @@ export const Profile: React.FC = () => {
               )}
 
               {activeTab === "security" && (
-                <PasswordForm
-                  onChangePassword={handleChangePassword}
-                  loading={changingPassword}
-                />
+                <div className="space-y-6">
+                  <PasswordForm
+                    onChangePassword={handleChangePassword}
+                    loading={changingPassword}
+                  />
+                  <SecuritySettings />
+                </div>
               )}
               {activeTab === "appearance" && <AppearanceTab />}
             </div>
