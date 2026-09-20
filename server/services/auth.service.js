@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { prisma } from '../db/prisma.js';
 import { revokeAllSessionTokens } from './session.service.js';
+import { createMfaChallenge } from './mfa.service.js';
 import { ConflictError, HttpError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
 
 const MAX_FAILED_ATTEMPTS = parseInt(process.env.MAX_FAILED_LOGIN_ATTEMPTS || "5", 10);
@@ -16,6 +17,7 @@ const publicUserSelect = {
   created_at: true,
   token_version: true,
   email_verified_at: true,
+  totp_enabled: true,
 };
 
 export const signupUser = async ({ email, password, username, firstname, lastname }) => {
@@ -65,6 +67,15 @@ export const loginUser = async ({ email, password, ip, userAgent }) => {
 
   await prisma.loginAttempt.deleteMany({ where: { email } });
 
+  if (user.totp_enabled) {
+    const challenge_id = await createMfaChallenge(user.user_id);
+    return {
+      user: null,
+      mfaRequired: true,
+      challenge: { challenge_id },
+    };
+  }
+
   const publicUser = {
     user_id: user.user_id,
     email: user.email,
@@ -74,6 +85,7 @@ export const loginUser = async ({ email, password, ip, userAgent }) => {
     created_at: user.created_at,
     token_version: user.token_version,
     email_verified_at: user.email_verified_at,
+    totp_enabled: user.totp_enabled,
   };
   return { user: publicUser, mfaRequired: false };
 };
@@ -101,6 +113,7 @@ export const upsertOAuthUser = async ({ email, given_name, family_name, name }) 
       lastname: existing.lastname,
       created_at: existing.created_at,
       email_verified_at: existing.email_verified_at ?? new Date(),
+      totp_enabled: existing.totp_enabled,
     };
   }
 
