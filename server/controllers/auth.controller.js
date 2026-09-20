@@ -5,6 +5,15 @@ import {
   getPublicUser,
   upsertOAuthUser,
 } from "../services/auth.service.js";
+import {
+  generateSecret,
+  generateOtpauthUrl,
+  verifyToken,
+  generateBackupCodes,
+  hashBackupCodes,
+  verifyBackupCode,
+  consumeMfaChallenge,
+} from "../services/mfa.service.js";
 import { sendVerificationEmail } from "../services/email.service.js";
 import { prisma } from "../db/prisma.js";
 import {
@@ -15,7 +24,7 @@ import {
   listSessions,
 } from "../services/session.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { BadRequestError, NotFoundError } from "../utils/errors.js";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../utils/errors.js";
 import isStrongPassword from "validator/lib/isStrongPassword.js";
 import {
   buildGoogleAuthUrl,
@@ -274,4 +283,92 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     data: { email_verified_at: user.email_verified_at ?? new Date() },
   });
   return res.json({ message: "Email verified" });
+});
+
+export const mfaSetup = asyncHandler(async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { user_id: req.user.user_id },
+    select: { totp_secret: true, email: true },
+  });
+  let secret = user?.totp_secret;
+  if (!secret) {
+    secret = generateSecret();
+    await prisma.user.update({
+      where: { user_id: req.user.user_id },
+      data: { totp_secret: secret },
+    });
+  }
+  return res.json({
+    secret,
+    otpauth_url: generateOtpauthUrl({ secret, email: user.email }),
+  });
+});
+
+export const mfaVerify = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) throw new BadRequestError("Token required");
+  const user = await prisma.user.findUnique({
+    where: { user_id: req.user.user_id },
+    select: { totp_secret: true, totp_enabled: true },
+  });
+  if (!user?.totp_secret) throw new BadRequestError("MFA not initialized");
+  if (user.totp_enabled) return res.json({ message: "MFA already enabled" });
+  if (!verifyToken({ token, secret: user.totp_secret })) {
+    throw new BadRequestError("Invalid verification code");
+  }
+  const backupCodes = generateBackupCodes();
+  await prisma.user.update({
+    where: { user_id: req.user.user_id },
+    data: {
+      totp_enabled: true,
+      backup_codes: hashBackupCodes(backupCodes),
+    },
+  });
+  return res.json({ message: "MFA enabled", backupCodes });
+});
+
+export const mfaDisable = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) throw new BadRequestError("Token required");
+  const user = await prisma.user.findUnique({
+    where: { user_id: req.user.user_id },
+    select: { totp_secret: true },
+  });
+  if (!user?.totp_secret) throw new BadRequestError("MFA not enabled");
+  if (!verifyToken({ token, secret: user.totp_secret })) {
+    throw new BadRequestError("Invalid verification code");
+  }
+  await prisma.user.update({
+    where: { user_id: req.user.user_id },
+    data: { totp_enabled: false, totp_secret: null, backup_codes: [] },
+  });
+  return res.json({ message: "MFA disabled" });
+});
+
+export const mfaLogin = asyncHandler(async (req, res) => {
+  const challengeId = req.cookies?.mfa_challenge;
+  const userId = await consumeMfaChallenge(challengeId);
+  const user = await prisma.user.findUnique({
+    where: { user_id: userId },
+    select: { totp_enabled: true, totp_secret: true },
+  });
+  if (!user?.totp_enabled) throw new BadRequestError("MFA is not enabled");
+
+  const { token } = req.body;
+  const validTotp = verifyToken({ token, secret: user.totp_secret });
+  if (!validTotp) {
+    let backupOk = false;
+    try {
+      await verifyBackupCode(userId, token);
+      backupOk = true;
+    } catch {
+      backupOk = false;
+    }
+    if (!backupOk) throw new UnauthorizedError("Invalid verification code");
+  }
+
+  const publicUser = await getPublicUser(userId);
+  await setAuthCookies(req, res, publicUser);
+  res.clearCookie("mfa_challenge", mfaCookieOptions());
+  return res.json(publicUser);
 });

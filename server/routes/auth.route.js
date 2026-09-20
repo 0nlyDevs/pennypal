@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { signup, login, logout, logoutAll, sessions, me, refresh, googleAuth, googleCallback, requestVerification, verifyEmail } from '../controllers/auth.controller.js';
+import { signup, login, logout, logoutAll, sessions, me, refresh, googleAuth, googleCallback, requestVerification, verifyEmail, mfaSetup, mfaVerify, mfaDisable, mfaLogin } from '../controllers/auth.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { authLimiter } from '../middleware/rateLimit.js';
 import { validateSignup, validateLogin } from '../middleware/validate.js';
@@ -18,6 +18,10 @@ router.get('/me', requireAuth, me);
 router.post('/request-verification', requireAuth, requestVerification);
 router.get('/verify-email', verifyEmail);
 router.post('/verify-email', verifyEmail);
+router.get('/mfa/setup', requireAuth, mfaSetup);
+router.post('/mfa/verify', requireAuth, mfaVerify);
+router.post('/mfa/disable', requireAuth, mfaDisable);
+router.post('/mfa/login', mfaLogin);
 router.get('/google', googleAuth);
 router.get('/google/callback', googleCallback);
 
