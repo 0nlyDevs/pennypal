@@ -18,8 +18,10 @@ const Mascot: React.FC<MascotProps> = ({ className = "" }) => {
   const [prevExpression, setPrevExpression] =
     useState<MascotExpression>("idle");
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const frameTimeoutRef = useRef<number | null>(null);
-  const transitionTimeoutRef = useRef<number | null>(null);
+  const frameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   useEffect(() => {
     if (expression !== prevExpression) {
