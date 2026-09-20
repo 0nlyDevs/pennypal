@@ -111,6 +111,8 @@ npm run storybook
 
 - Server env template: `server/.env.example`
 - Key vars: `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`
+- Auth/session vars: `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL_DAYS`, `JWT_ISSUER`, `JWT_AUDIENCE`, `MAX_FAILED_LOGIN_ATTEMPTS`, `LOCKOUT_WINDOW_MS`
+- Email vars (Resend): `RESEND_API_KEY`, `EMAIL_FROM`, `API_PUBLIC_URL`
 
 ## OpenAPI
 
@@ -123,7 +125,19 @@ npm run api:generate
 
 ## Deployment
 
-- Client can be deployed as static assets (e.g., Vercel). Ensure API base points to the deployed server.
-- Server: provide `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, and (if used) Supabase/Google OAuth variables as per `server/.env.example`.
+- Client is deployed on Cloudflare Pages. A Pages Function at
+  `client/functions/api/[[path]].js` proxies `/api/*` to the backend, so the
+  browser only ever talks to the first-party origin and auth cookies stay
+  first-party.
+- Set the Pages runtime variable `API_BASE` (e.g.
+  `https://pennypal-ya7b.onrender.com`) in the Cloudflare dashboard. Do **not**
+  set `VITE_API_BASE` in production; the build defaults to the relative `/api`.
+- Set `GOOGLE_REDIRECT_URI` to the Cloudflare origin callback, e.g.
+  `https://<your-pages-domain>/api/auth/google/callback`, and register it in
+  the Google Cloud console.
+- Server: provide `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, and (if used)
+  Supabase/Google OAuth variables as per `server/.env.example`. Auth tokens are
+  issued as httpOnly cookies (`token`, `refresh`), so the API and the Pages
+  origin must be served over HTTPS.
 
 <!-- Project-specific contribution guidelines and CI/CD details live outside this file. -->
