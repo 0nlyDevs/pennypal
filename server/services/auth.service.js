@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { prisma } from '../db/prisma.js';
 import { revokeAllSessionTokens } from './session.service.js';
 import { ConflictError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
@@ -17,7 +18,7 @@ export const signupUser = async ({ email, password, username, firstname, lastnam
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new ConflictError('Email already in use');
 
-  const hashed_password = await bcrypt.hash(password, 10);
+  const hashed_password = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: {
       email,
@@ -69,8 +70,8 @@ export const upsertOAuthUser = async ({ email, given_name, family_name, name }) 
     };
   }
 
-  const randomPass = `oauth-${Math.random().toString(36).slice(2)}-${Date.now()}`;
-  const hashed_password = await bcrypt.hash(randomPass, 10);
+  const randomPass = 'oauth-' + crypto.randomBytes(32).toString('hex');
+  const hashed_password = await bcrypt.hash(randomPass, 12);
   const preferred = (given_name && String(given_name).trim())
     || (name && String(name).trim())
     || (email && String(email).split('@')[0])
@@ -116,7 +117,7 @@ export const changeUserPassword = async (userId, { currentPassword, newPassword 
   const ok = await bcrypt.compare(currentPassword, user.hashed_password);
   if (!ok) throw new UnauthorizedError('Current password is incorrect');
 
-  const hashed_password = await bcrypt.hash(newPassword, 10);
+  const hashed_password = await bcrypt.hash(newPassword, 12);
   
   await prisma.user.update({
     where: { user_id: userId },
