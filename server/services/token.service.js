@@ -40,7 +40,7 @@ export const mfaCookieOptions = () => ({
 export const oauthCookieOpts = () => ({
   httpOnly: true,
   secure: isProd(),
-  sameSite: "lax",
+  sameSite: isProd() ? "none" : "lax",
   path: "/",
   maxAge: 10 * 60 * 1000,
 });
