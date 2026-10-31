@@ -6,6 +6,7 @@ import { type LoginFormData } from "../types/Auth";
 import LoginForm from "../components/auth/LoginForm";
 import AuthLayout from "../components/auth/AuthLayout";
 import { authLabelCls, authInputCls, submitCls } from "../components/auth/constants";
+import { toFriendlyAuthMessage } from "../lib/authErrors";
 
 export default function LoginPage() {
   const { login, completeMfaLogin, loading, error } = useAuth();
@@ -28,7 +29,7 @@ export default function LoginPage() {
       toast.success("Signed in successfully");
       navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Login failed");
+      toast.error(toFriendlyAuthMessage(err, "login"));
     }
   }
 

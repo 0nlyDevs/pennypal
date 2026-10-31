@@ -19,7 +19,7 @@ export const useAuth = () => {
         return;
       }
       setUser(null);
-      setError(extractErrorMessage(err, 'Failed to fetch session'));
+      setError(toFriendlyAuthMessage(err, 'me'));
     } finally {
       setLoading(false);
     }
